@@ -3,15 +3,29 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace Caliburn.Micro
 {
+    // ----------------------------------------------------------------------------------------------
+    //mspa: Added IsNotitfying property and these methods:                                          -
+    //      TurnOfNortification()   => returns the last value of IsNotitfying before turning it off -
+    //      GetInvocationList()     => List subscriber methods                                      -
+    // ----------------------------------------------------------------------------------------------
+
+
     /// <summary>
     /// A base collection class that supports automatic UI thread marshalling.
     /// </summary>
     /// <typeparam name="T">The type of elements contained in the collection.</typeparam>
     public class BindableCollection<T> : ObservableCollection<T>, IObservableCollection<T>
     {
+        private void BindableCollection_PropertyChanged(object sender, PropertyChangedEventArgs e) => throw new NotImplementedException();
+           public bool IsAllNotificationTurnedOff => PropertyChangedBase.IsAllNotificationTurnedOff;
+
         /// <summary>
         /// Initializes a new instance of the <see cref = "BindableCollection&lt;T&gt;" /> class.
         /// </summary>
@@ -33,15 +47,30 @@ namespace Caliburn.Micro
         /// <summary>
         /// Enables/Disables property change notification.
         /// </summary>
+        [NotMapped]
+        [JsonIgnore]
         public bool IsNotifying { get; set; }
 
+        public bool TurnOffNotification()
+        {
+            var status = IsNotifying;
+            IsNotifying = false;
+            return status;
+        }
+
+        public bool TurnOnNotification()
+        {
+            var status = IsNotifying;
+            IsNotifying = true;
+            return status;
+        }
         /// <summary>
         /// Notifies subscribers of the property change.
         /// </summary>
         /// <param name = "propertyName">Name of the property.</param>
         public virtual void NotifyOfPropertyChange(string propertyName)
         {
-            if (IsNotifying)
+            if (IsNotifying && !IsAllNotificationTurnedOff)
             {
                 if (PlatformProvider.Current.PropertyChangeNotificationsOnUIThread)
                 {
@@ -59,6 +88,8 @@ namespace Caliburn.Micro
         /// </summary>
         public void Refresh()
         {
+            IsNotifying = true;
+
             if (PlatformProvider.Current.PropertyChangeNotificationsOnUIThread)
             {
                 OnUIThread(() =>
@@ -189,8 +220,9 @@ namespace Caliburn.Micro
         /// <param name = "e">Arguments of the event being raised.</param>
         protected override void OnCollectionChanged(NotifyCollectionChangedEventArgs e)
         {
-            if (IsNotifying)
+            if (IsNotifying && !IsAllNotificationTurnedOff)
             {
+                Tracer.PropertyChange($"{e.Action}()", GetInvocationList());
                 base.OnCollectionChanged(e);
             }
         }
@@ -201,8 +233,9 @@ namespace Caliburn.Micro
         /// <param name = "e">The event data to report in the event.</param>
         protected override void OnPropertyChanged(PropertyChangedEventArgs e)
         {
-            if (IsNotifying)
+            if (IsNotifying && !IsAllNotificationTurnedOff)
             {
+                Tracer.PropertyChange($"{e.PropertyName}", GetInvocationList());
                 base.OnPropertyChanged(e);
             }
         }
@@ -281,5 +314,20 @@ namespace Caliburn.Micro
         /// <remarks>An extension point for subclasses to customise how property change notifications are handled.</remarks>
         /// <param name="action"></param>
         protected virtual void OnUIThread(System.Action action) => action.OnUIThread();
-    }
+
+        /// <summary>
+        /// Delegate[] list of methods to be call on Event
+        /// Note: Is only intended for the Tracer and debugging
+        /// </summary>        
+        /// <returns>List of Methods to be called On Collection Changed</returns>
+        //mspa: 2024-06-03 Added GetInvocationList() method
+        public Delegate[] GetInvocationList()
+        {
+            Type classType = this.GetType();
+
+            FieldInfo eventField = classType.BaseType.GetRuntimeFields().FirstOrDefault(f => f.Name == nameof(CollectionChanged));
+
+            return ((Delegate)eventField?.GetValue(this))?.GetInvocationList();
+        }
+   }
 }

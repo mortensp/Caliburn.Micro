@@ -1,7 +1,10 @@
-﻿<Project Sdk="MSBuild.Sdk.Extras">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+<!--<Project Sdk="MSBuild.Sdk.Extras">-->
+
 
   <PropertyGroup>
-    <TargetFrameworks>net462;uap10.0.19041;net9.0-android;net9.0-ios;net8.0-windows;net9.0-windows</TargetFrameworks>
+    <!--<TargetFrameworks>net462;uap10.0.19041;net9.0-android;net9.0-ios;net8.0-windows;net9.0-windows</TargetFrameworks>-->
+    <TargetFrameworks>net8.0-windows;net9.0-windows</TargetFrameworks>
     <PackageId>Caliburn.Micro</PackageId>
     <Product>Caliburn.Micro</Product>
     <RootNamespace>Caliburn.Micro</RootNamespace>
@@ -10,6 +13,8 @@
     <LangVersion>10</LangVersion>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
 
+    <Platforms>x64;AnyCPU</Platforms>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
   <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
@@ -23,10 +28,12 @@
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       <IncludeAssets>Caliburn.Micro.Platform.Core.dll</IncludeAssets>
     </ProjectReference>
+    
     <ProjectReference Include="..\Caliburn.Micro.Core\Caliburn.Micro.Core.csproj" AdditionalProperties="TargetFramework=netstandard2.0">
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       <ExcludeAssets>Caliburn.Micro.Core.dll</ExcludeAssets>
     </ProjectReference>
+    
     <Compile Remove="Platforms\**\*.cs" />
     <None Include="Platforms\**\*.cs" />
   </ItemGroup>
@@ -36,7 +43,7 @@
     <Title>Caliburn Micro for WPF, UWP, iOS, and Android</Title>
     <PackageIcon>CaliburnIcon.png</PackageIcon>
   </PropertyGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <Reference Include="PresentationCore" />
@@ -50,16 +57,20 @@
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <Compile Include="Platforms\net46-netcore\**\*.cs" />
   </ItemGroup>
+  
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <Compile Include="Platforms\net46-netcore\**\*.cs" />
   </ItemGroup>
+  
+  
 
   <ItemGroup Label="Package">
     <None Include="..\..\CaliburnIcon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    
     <None Include="Platforms\uap\Caliburn.Micro.Platform.rd.xml" PackagePath="lib\uap10.0.19041\Caliburn.Micro.Platform\Properties\Caliburn.Micro.Platform.rd.xml" Pack="true" />
   </ItemGroup>
 
@@ -90,4 +101,32 @@
     <Folder Include="Platforms\WinUI3\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="9.0.5" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <Optimize>false</Optimize>
+    <DefineConstants>$(DefineConstants)NOTRACE</DefineConstants>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='ProdTest'">
+    <DefineConstants>$(DefineConstants)NOTRACE;RELEASE</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(Configuration)'=='Profile'">
+    <DefineConstants>$(DefineConstants)NOTRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DefineConstants>$(DefineConstants)NOTRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
 </Project>

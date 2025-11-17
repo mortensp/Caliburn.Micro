@@ -372,7 +372,7 @@ namespace Caliburn.Micro
 #else
             var element = elementName == "$this"
                 ? target
-                : BindingScope.GetNamedElements(target).FindName(elementName);
+                : BindingScope.GetNamedElements(target).FindName(elementName)?.Object; // mspa: as FindName now return a NamedDependencyObject
             if (element == null)
             {
                 return;

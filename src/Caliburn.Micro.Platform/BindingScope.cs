@@ -30,12 +30,16 @@
     using System.Windows.Media;
     using System.Windows.Media.Media3D;
 #endif
+    // -------------------------------------------------------------------------------------
+    // MSPA: We now bind elements of type NamedDependencyObject insted of FrameworkElement -
+    // -------------------------------------------------------------------------------------
 
     /// <summary>
     /// Provides methods for searching a given scope for named elements.
     /// </summary>
     public static class BindingScope
     {
+        static readonly ILog Log = LogManager.GetLog(typeof(BindingScope));
         static readonly List<ChildResolver> ChildResolvers = new List<ChildResolver>();
         static readonly ConcurrentDictionary<Type, Object> NonResolvableChildTypes = new ConcurrentDictionary<Type, Object>();
 
@@ -77,7 +81,8 @@
         /// <param name="elementsToSearch">The named elements to search through.</param>
         /// <param name="name">The name to search for.</param>
         /// <returns>The named element or null if not found.</returns>
-        public static FrameworkElement FindName(this IEnumerable<FrameworkElement> elementsToSearch, string name)
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static NamedDependencyObject FindName(this IEnumerable<NamedDependencyObject> elementsToSearch, string name)
         {
 #if WINDOWS_UWP || WinUI3
             return elementsToSearch.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
@@ -152,7 +157,8 @@
         /// </summary>
         /// <returns>Named <see cref="FrameworkElement"/> instances in the provided scope.</returns>
         /// <remarks>Pass in a <see cref="DependencyObject"/> and receive a list of named <see cref="FrameworkElement"/> instances in the same scope.</remarks>
-        public static Func<DependencyObject, IEnumerable<FrameworkElement>> GetNamedElements = elementInScope =>
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Func<DependencyObject, IEnumerable<NamedDependencyObject>> GetNamedElements = elementInScope =>
         {
             var routeHops = FindScopeNamingRoute(elementInScope);
             return FindNamedDescendants(routeHops);
@@ -175,7 +181,8 @@
         /// each of these elements, the <see cref="ContentControl.Content"/>, the <c>HeaderedContentControl.Header</c>,
         /// the <see cref="ItemsControl.Items"/>, or the <c>HeaderedItemsControl.Header</c>, if any are found.
         /// </remarks>
-        public static Func<ScopeNamingRoute, IEnumerable<FrameworkElement>> FindNamedDescendants = routeHops =>
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Func<ScopeNamingRoute, IEnumerable<NamedDependencyObject>> FindNamedDescendants = routeHops =>
         {
             if (routeHops == null)
             {
@@ -187,7 +194,7 @@
                 throw new ArgumentException(String.Format("Root is null on the given {0}", typeof(ScopeNamingRoute)));
             }
 
-            var descendants = new List<FrameworkElement>();
+            var descendants = new List<NamedDependencyObject>();
             var queue = new Queue<DependencyObject>();
             queue.Enqueue(routeHops.Root);
 
@@ -200,7 +207,7 @@
                 var currentElement = current as FrameworkElement;
 
                 if (currentElement != null && !string.IsNullOrEmpty(currentElement.Name))
-                    descendants.Add(currentElement);
+                    descendants.Add(new NamedDependencyObject(currentElement));
 
                 if (current is UserControl && !ReferenceEquals(current, routeHops.Root))
                     continue;
@@ -280,6 +287,20 @@
                 }
             }
 
+            // ----------------------------------------------------------------------------------------------------------
+            //mspa: This should totaly replace the VisualTree lookup above, but that has been kept - just to be sure:-) -
+            // ----------------------------------------------------------------------------------------------------------
+            var scope = NameScope.GetNameScope(routeHops.Root as FrameworkElement);
+
+            if (scope != null)
+                foreach (var elm in (System.Windows.Markup.INameScopeDictionary)scope)
+                {
+                    if (!descendants.Any(d => d.Name == elm.Key))
+                    {
+                        descendants.Add(new NamedDependencyObject((DependencyObject)elm.Value, elm.Key));
+                    }
+                }
+            
             return descendants;
         };
 
@@ -492,6 +513,32 @@
             {
                 return path.TryGetValue(hopSource, out hopTarget);
             }
+        }
+        // mspa: Only used for logging
+        /// <summary>
+        /// Get Name of a DependencyObject.
+        /// </summary>
+        /// <param name="dependencyObject">The  requested object name.</param>
+        /// <returns>The named or null if not found.</returns>
+        internal static string GetName(this DependencyObject dependencyObject)
+        {
+            var element = dependencyObject as FrameworkElement;
+            if (element != null)
+                return element.Name;
+
+            //var parent = VisualTreeHelper.GetParent(dependencyObject);
+
+            var scope = NameScope.GetNameScope(dependencyObject);
+            if (scope != null)
+                foreach (var elm in (System.Windows.Markup.INameScopeDictionary)scope)
+                {
+                    if (elm.Value == dependencyObject)
+                    {
+                        return elm.Key;
+                    }
+                }
+
+            return null;
         }
     }
 }

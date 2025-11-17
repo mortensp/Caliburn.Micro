@@ -1,11 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 namespace Caliburn.Micro
 {
+    // ----------------------------------------------------------------------------------------------
+    //mspa: Added IsNotitfying property and these methods:                                          -
+    //      TurnOfNortification()   => returns the last value of IsNotitfying before turning it off -
+    //      GetInvocationList()     => List subscriber methods                                      -
+    //      NotMapped and JsonIgnore attributes has been added
+    // ----------------------------------------------------------------------------------------------
+    
     /// <summary>
     /// A base class that implements the infrastructure for property change notification and automatically performs UI thread marshalling.
     /// </summary>
@@ -29,6 +38,8 @@ namespace Caliburn.Micro
         /// Enables/Disables property change notification.
         /// Virtualized in order to help with document oriented view models.
         /// </summary>
+        [NotMapped]
+        [JsonIgnore]
         public virtual bool IsNotifying { get; set; }
 
         /// <summary>
@@ -39,22 +50,26 @@ namespace Caliburn.Micro
             NotifyOfPropertyChange(string.Empty);
         }
 
+        #region NotifyOfPropertyChange Methods
         /// <summary>
         /// Notifies subscribers of the property change.
         /// </summary>
         /// <param name = "propertyName">Name of the property.</param>
         public virtual void NotifyOfPropertyChange([System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
         {
-            if (IsNotifying && PropertyChanged != null)
+            if (IsNotifying && !IsAllNotificationTurnedOff)
             {
-                if (PlatformProvider.Current.PropertyChangeNotificationsOnUIThread)
-                {
-                    OnUIThread(() => OnPropertyChanged(new PropertyChangedEventArgs(propertyName)));
-                }
+                if (PropertyChanged is null)                
+                    Tracer.PropertyChange(propertyName, PropertyChanged?.GetInvocationList());                
                 else
-                {
-                    OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
-                }
+                    if (PlatformProvider.Current.PropertyChangeNotificationsOnUIThread)
+                    {
+                        OnUIThread(() => OnPropertyChanged(new PropertyChangedEventArgs(propertyName)));
+                        }
+                    else
+                    {
+                        OnPropertyChanged(new PropertyChangedEventArgs(propertyName));
+                        }
             }
         }
 
@@ -67,6 +82,26 @@ namespace Caliburn.Micro
         {
             NotifyOfPropertyChange(property.GetMemberInfo().Name);
         }
+         
+              /// <summary>
+            /// Notifies subscribers of the property change.
+            /// </summary>
+            /// <param name = "classPropertyName">Name of the class-property.</param>
+            /// <param name = "propertyName">Name of the property.</param>
+            //mspa: 
+            public virtual void NotifyOfPropertyChange(string classPropertyName, [System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
+            {
+                if (IsNotifying && !IsAllNotificationTurnedOff)
+                    if (PropertyChanged is null)
+                        Tracer.PropertyChange($"{classPropertyName} ({propertyName})", PropertyChanged?.GetInvocationList());
+                    else
+                        if (PlatformProvider.Current.PropertyChangeNotificationsOnUIThread)
+                            OnUIThread(() => OnPropertyChanged(new PropertyChangedEventArgs(classPropertyName)));
+                        else
+                            OnPropertyChanged(new PropertyChangedEventArgs(classPropertyName));
+            }
+
+        #endregion
 
         /// <summary>
         /// Raises the <see cref="PropertyChanged" /> event directly.
@@ -75,6 +110,9 @@ namespace Caliburn.Micro
         [EditorBrowsable(EditorBrowsableState.Never)]
         protected void OnPropertyChanged(PropertyChangedEventArgs e)
         {
+            if (IsNotifying && !IsAllNotificationTurnedOff)
+                Tracer.PropertyChange(e.PropertyName, PropertyChanged?.GetInvocationList());
+
             PropertyChanged?.Invoke(this, e);
         }
 
@@ -105,6 +143,58 @@ namespace Caliburn.Micro
             NotifyOfPropertyChange(propertyName ?? string.Empty);
 
             return true;
+        }
+        /// <summary>
+        /// Setup Bubling of PropertyChanged events to parent
+        /// </summary>
+        /// <param name = "backingField">Name of the propertys BackingField.</param>
+        /// <param name = "value">New property value.</param>
+        /// <param name = "classPropertyName">Name of the Class-property.</param>
+        /// <returns></returns>
+        //mspa:
+        public void BubblePropertyChanged(PropertyChangedBase backingField, PropertyChangedBase value, [System.Runtime.CompilerServices.CallerMemberName] string classPropertyName = null)
+        {
+            if (backingField != null)
+                backingField.PropertyChanged -= noitifyParent;
+
+            if (value != null)
+                value.PropertyChanged += noitifyParent;
+
+            void noitifyParent(object sender, PropertyChangedEventArgs e)
+            {
+                NotifyOfPropertyChange(classPropertyName, e.PropertyName);
+            }
+        }
+
+      
+        public Delegate[] GetInvocationList() => PropertyChanged?.GetInvocationList();
+
+        [NotMapped]
+        [JsonIgnore]
+        public static  bool IsAllNotificationTurnedOff { get; set; } = false;
+
+        public static bool TurnOffAllNortification()
+        {
+            var status                 = IsAllNotificationTurnedOff;
+            IsAllNotificationTurnedOff = true;
+            return status;
+        }
+
+        public static void RestoreAllNotification(bool oldStatus)
+        {
+            IsAllNotificationTurnedOff = oldStatus;
+        }
+
+        public bool TurnOffNortification()
+        {
+            var status  = IsNotifying;
+            IsNotifying = false;
+            return status;
+        }
+
+        public void RestoreNotification(bool oldStatus)
+        {
+            IsNotifying = oldStatus;
         }
     }
 }

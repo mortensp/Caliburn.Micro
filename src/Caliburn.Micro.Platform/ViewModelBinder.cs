@@ -36,6 +36,8 @@ namespace Caliburn.Micro
 #else
     using System.Windows;
     using Microsoft.Xaml.Behaviors;
+    using System.Windows.Controls;
+    using System.Windows.Data;
 #endif
 
     /// <summary>
@@ -84,16 +86,40 @@ namespace Caliburn.Micro
         /// Creates data bindings on the view's controls based on the provided properties.
         /// </summary>
         /// <remarks>Parameters include named Elements to search through and the type of view model to determine conventions for. Returns unmatched elements.</remarks>
-        public static Func<IEnumerable<FrameworkElement>, Type, IEnumerable<FrameworkElement>> BindProperties = (namedElements, viewModelType) => {
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Func<IEnumerable<NamedDependencyObject>, Type, IEnumerable<NamedDependencyObject>> BindProperties = (namedElements, viewModelType) =>
+        {
+            var unmatchedElements = new List<NamedDependencyObject>();
 
-            var unmatchedElements = new List<FrameworkElement>();
 #if !XFORMS && !MAUI
             foreach (var element in namedElements) {
                 var cleanName = element.Name.Trim('_');
                 var parts = cleanName.Split(new[] { '_' }, StringSplitOptions.RemoveEmptyEntries);
 
-                var property = viewModelType.GetPropertyCaseInsensitive(parts[0]);
-                var interpretedViewModelType = viewModelType;
+                //mspa: Using NamedDependencyObject instead of FrameworkElement
+                Type interpretedViewModelType = viewModelType;
+
+                if (element.Object is DataGridBoundColumn par)
+                {
+                    var grid = par.GetDataGridOwner();
+                    Type collectionType;
+
+                    if (grid.ItemsSource is null)
+                    {
+                        var bind = BindingOperations.GetBindingExpression(grid, ItemsControl.ItemsSourceProperty);
+                        if (bind is null)
+                            continue;
+
+                        collectionType = grid.DataContext.GetType().GetProperty(bind.ParentBinding.Path.Path).PropertyType;
+                    }
+                    else
+                        collectionType = grid.ItemsSource.GetType();
+
+                    interpretedViewModelType = collectionType.GetCollectionElementType();
+                }
+                //
+
+                var property = interpretedViewModelType.GetPropertyCaseInsensitive(parts[0]);
 
                 for (int i = 1; i < parts.Length && property != null; i++) {
                     interpretedViewModelType = property.PropertyType;
@@ -106,8 +132,10 @@ namespace Caliburn.Micro
                     continue;
                 }
 
-                var convention = ConventionManager.GetElementConvention(element.GetType());
-                if (convention == null) {
+                var convention = ConventionManager.GetElementConvention(element.Object.GetType());    //mspa: as element now is of type NamedDependencyObject
+
+                if (convention == null)            
+                {
                     unmatchedElements.Add(element);
                     Log.Warn("Binding Convention Not Applied: No conventions configured for {0}.", element.GetType());
                     continue;
@@ -117,7 +145,7 @@ namespace Caliburn.Micro
                     interpretedViewModelType,
                     cleanName.Replace('_', '.'),
                     property,
-                    element,
+                    element.Object,        //mspa: as element now is of type NamedDependencyObject
                     convention
                     );
 
@@ -138,7 +166,9 @@ namespace Caliburn.Micro
         /// Attaches instances of <see cref="ActionMessage"/> to the view's controls based on the provided methods.
         /// </summary>
         /// <remarks>Parameters include the named elements to search through and the type of view model to determine conventions for. Returns unmatched elements.</remarks>
-        public static Func<IEnumerable<FrameworkElement>, Type, IEnumerable<FrameworkElement>> BindActions = (namedElements, viewModelType) => {
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Func<IEnumerable<NamedDependencyObject>, Type, IEnumerable<NamedDependencyObject>> BindActions = (namedElements, viewModelType) =>
+        {
             var unmatchedElements = namedElements.ToList();
 #if !XFORMS && !MAUI
 #if WINDOWS_UWP || XFORMS || MAUI
@@ -197,7 +227,7 @@ namespace Caliburn.Micro
                 }
 
                 Log.Info("Action Convention Applied: Action {0} on element {1}.", method.Name, message);
-                Message.SetAttach(foundControl, message);
+                Message.SetAttach(foundControl.Object, message);      //mspa: as foundControl now is of type NamedDependencyObject
             }
 #endif
             return unmatchedElements;
@@ -211,7 +241,8 @@ namespace Caliburn.Micro
         /// <summary>
         /// Allows the developer to add custom handling of named elements which were not matched by any default conventions.
         /// </summary>
-        public static Action<IEnumerable<FrameworkElement>, Type> HandleUnmatchedElements = (elements, viewModelType) => { };
+        //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Action<IEnumerable<NamedDependencyObject>, Type> HandleUnmatchedElements = (elements, viewModelType) => { };
 
         /// <summary>
         /// Binds the specified viewModel to the view.
@@ -223,6 +254,7 @@ namespace Caliburn.Micro
             // so here we get the actual ViewModel which is in the Instance property of DesignInstanceExtension
             if (View.InDesignMode) {
                 var vmType = viewModel.GetType();
+
                 if (vmType.FullName == "Microsoft.Expression.DesignModel.InstanceBuilders.DesignInstanceExtension") {
                     var propInfo = vmType.GetProperty("Instance", BindingFlags.Instance | BindingFlags.NonPublic);
                     viewModel = propInfo.GetValue(viewModel, null);

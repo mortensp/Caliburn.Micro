@@ -1,16 +1,21 @@
-﻿<Project Sdk="MSBuild.Sdk.Extras">
+﻿<!--<Project Sdk="MSBuild.Sdk.Extras">-->
+<Project Sdk="Microsoft.NET.Sdk">  
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <PackageId>Caliburn.Micro.Core</PackageId>
     <Product>Caliburn.Micro Core</Product>
     <RootNamespace>Caliburn.Micro</RootNamespace>
     <AssemblyOriginatorKeyFile>.\..\Caliburn.Micro.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <LangVersion>latest</LangVersion>
+    <Platforms>x64;AnyCPU</Platforms>
+    <Nullable>disable</Nullable>
     <Title>Caliburn Micro Core</Title>
     <PackageIcon>CaliburnIcon.png</PackageIcon>
-  </PropertyGroup>
+  </PropertyGroup>  
+
+
 
   <ItemGroup>
     <None Include="..\..\CaliburnIcon.png">
@@ -22,20 +27,75 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DocumentationMarkdown>$(MSBuildProjectDirectory)\Readme.md</DocumentationMarkdown>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
   </PropertyGroup>
+
   <ItemGroup>
     <None Update="Readme.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+  </ItemGroup> 
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DefineConstants>$(DefineConstants)TRACE;TracePropertyChangeOff;TraceListenersOff</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='ProdTest'">
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <DefineConstants>$(DefineConstants)NOTRACE;RELEASE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Profile'">
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <DefineConstants>$(DefineConstants)NOTRACE</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+    <DefineConstants>$(DefineConstants)NOTRACE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('netstandard'))">
+    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('MonoAndroid'))">
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('MonoAndroid'))">
+    <AndroidResgenNamespace>Caliburn.Micro.Core</AndroidResgenNamespace>
+  </PropertyGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('Xamarin.iOS'))">
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+
+ <ItemGroup>
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageReference Update="Nerdbank.GitVersioning" Version="3.7.112" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="GenericCollections\BindableCollection.cs" />
+    <Compile Remove="GenericCollections\FullyObservableCollection.cs" />
+    <Compile Remove="GenericCollections\ItemPropertyChangedEventArgs.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.5" />
+  </ItemGroup>
 </Project>

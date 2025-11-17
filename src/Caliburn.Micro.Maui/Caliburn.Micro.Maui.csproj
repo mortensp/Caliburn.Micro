@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+
     <TargetFrameworks>net9.0;net9.0-android;net9.0-ios;net9.0-maccatalyst</TargetFrameworks>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows')) and '$(MSBuildRuntimeType)' == 'Full'">$(TargetFrameworks);net9.0-windows10.0.19041</TargetFrameworks>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
@@ -18,6 +19,7 @@
 
     <PackageId>Caliburn.Micro.Maui</PackageId>
     <Product>Caliburn.Micro.Maui</Product>
+
     <BuildProjectReferences Condition="'$(NoBuild)' == 'true'">false</BuildProjectReferences>
     <!-- Removed the .xml from DefaultAllowedOutputExtensionsInPackageBuildOutputFolder -->
     <DefaultAllowedOutputExtensionsInPackageBuildOutputFolder>.dll; .exe; .winmd; .json; .pri</DefaultAllowedOutputExtensionsInPackageBuildOutputFolder>
@@ -26,7 +28,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- Generate symbols package -->
     <IncludeSymbols>false</IncludeSymbols>
-
   </PropertyGroup>
 
   <PropertyGroup>
@@ -132,9 +133,11 @@
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="8.0.0" />
     <PackageReference Update="Nerdbank.GitVersioning" Version="3.7.112" />
   </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="$(AssemblyName).Tests" />
   </ItemGroup>
+
   <!-- Add ProjectReferences output which are flagged as PrivateAssets="all" into the package. -->
   <Target Name="IncludeProjectReferencesWithPrivateAssetsAttributeInPackage"
           Condition="'@(ProjectReference)' != '' and @(ProjectReference->AnyHaveMetadataValue('PrivateAssets', 'all'))"

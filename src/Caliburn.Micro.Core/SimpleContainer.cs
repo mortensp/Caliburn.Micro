@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -303,10 +304,12 @@ namespace Caliburn.Micro
                 .FirstOrDefault();
         }
 
+        [DebuggerDisplay("Service: {Service.Name} Key: {Key}")]                            //mspa:
         private class ContainerEntry : List<Func<SimpleContainer, object>>
         {
             public string Key;
             public Type Service;
+            public override string ToString() => $"Service: {Service.Name} Key: {Key}";                            //mspa:
         }
 
         private class FactoryFactory<T>

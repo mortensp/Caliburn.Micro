@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;                                       //mspa:
 
 namespace Caliburn.Micro
 {
@@ -10,6 +12,8 @@ namespace Caliburn.Micro
         /// <summary>
         /// Enables/Disables property change notification.
         /// </summary>
+        [NotMapped]
+        [JsonIgnore]                                                         //mspa:
         bool IsNotifying { get; set; }
 
         /// <summary>

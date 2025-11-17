@@ -1,4 +1,6 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
 	<PropertyGroup>
 		<Copyright>Copyright (c) 2010 Blue Spire Consulting, Inc.</Copyright>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -13,13 +15,13 @@
 
 	<PropertyGroup>
 		<LangVersion>7.3</LangVersion>
-		<OutputPath>..\..\bin\$(MSBuildProjectName)\$(Configuration.ToLower())\</OutputPath>
+		<!--<OutputPath>..\..\bin\$(MSBuildProjectName)\$(Configuration.ToLower())\</OutputPath>-->
 		<RepositoryUrl>https://github.com/Caliburn-Micro/Caliburn.Micro</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<EmbedUntrackedSources>true</EmbedUntrackedSources>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
 		<IsTestProject>$(MSBuildProjectName.Contains('Tests'))</IsTestProject>
-		<SourceLinkEnabled>true</SourceLinkEnabled>
+		<SourceLinkEnabled>false</SourceLinkEnabled>
 		<GenerateDocumentationFile Condition="'$(Configuration)' == 'Release' and '$(IsTestProject)' != 'true'">true</GenerateDocumentationFile>
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 		<PackageOutputPath>..\..\packages</PackageOutputPath>

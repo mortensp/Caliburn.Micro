@@ -50,6 +50,10 @@
     using System.Windows.Documents;
 #endif
 
+    // ---------------------------------------------------------------------------------------------------------------
+    // MSPA: We now binds to DependencyObjects rather than FrameworkElements (that are derived fra DependencyObjects -
+    //       And a convention for DataGridBoundColumn is added                                                       -
+    // ---------------------------------------------------------------------------------------------------------------
     /// <summary>
     /// Used to configure the conventions used by the framework to apply bindings and create actions.
     /// </summary>
@@ -144,7 +148,8 @@
         /// <summary>
         /// Creates a binding and sets it on the element, applying the appropriate conventions.
         /// </summary>
-        public static Action<Type, string, PropertyInfo, FrameworkElement, ElementConvention, DependencyProperty> SetBinding =
+         //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Action<Type, string, PropertyInfo, DependencyObject, ElementConvention, DependencyProperty> SetBinding =
             (viewModelType, path, property, element, convention, bindableProperty) =>
             {
 #if WINDOWS_UWP || WinUI3
@@ -162,7 +167,10 @@
 #if AVALONIA
                 element.Bind(bindableProperty, binding);
 #else
-                BindingOperations.SetBinding(element, bindableProperty, binding);
+                if (element is DataGridBoundColumn cell)  //mspa: Using NamedDependencyObject instead of FrameworkElement
+                    cell.Binding = binding;
+                else
+                    BindingOperations.SetBinding(element, bindableProperty, binding);
 #endif
             };
 
@@ -322,7 +330,7 @@
                         if (!itemType.IsValueType && !typeof(string).IsAssignableFrom(itemType))
                         {
                             tabControl.ContentTemplate = DefaultItemTemplate;
-                            Log.Info("ContentTemplate applied to {0}.", element.Name);
+                            Log.Info("ContentTemplate applied to {0}.", element);
                         }
                     }
 
@@ -408,6 +416,20 @@
 #else
             AddElementConvention<Shape>(Shape.VisibilityProperty, "DataContext", "MouseLeftButtonUp");
             AddElementConvention<FrameworkElement>(FrameworkElement.VisibilityProperty, "DataContext", loadedEvent);
+   
+            //mspa: Using NamedDependencyObject instead of FrameworkElement
+            AddElementConvention<DataGridBoundColumn>(null, "Binding", "PropertyChanged")
+               .ApplyBinding = (viewModelType, path, property, element, convention) =>
+               {
+                   var cell = (DataGridBoundColumn)element;
+
+                   if (cell.Binding != null)
+                       return false;
+
+                   SetBinding(viewModelType, path, property, element, convention, convention.GetBindableProperty(element));
+
+                   return true;
+               };
 #endif
         }
 
@@ -465,7 +487,7 @@
         /// <summary>
         /// Determines whether a particular dependency property already has a binding on the provided element.
         /// </summary>
-        public static bool HasBinding(FrameworkElement element, DependencyProperty property)
+        public static bool HasBinding(DependencyObject element, DependencyProperty property) // mspa
         {
 #if AVALONIA
             Log.Info("Checking for binding on {0} for {1}.", element.Name, property.Name);
@@ -475,7 +497,8 @@
 #elif (NET || CAL_NETCORE) && !WinUI3
             return BindingOperations.GetBindingBase(element, property) != null;
 #else
-            return element.GetBindingExpression(property) != null;
+            //return element.GetBindingExpression(property) != null;
+            return BindingOperations.GetBindingBase(element, property) != null; //mspa
 #endif
         }
 
@@ -483,7 +506,7 @@
         /// Creates a binding and sets it on the element, guarding against pre-existing bindings.
         /// </summary>
         public static bool SetBindingWithoutBindingOverwrite(Type viewModelType, string path, PropertyInfo property,
-                                                             FrameworkElement element, ElementConvention convention,
+                                                             DependencyObject element, ElementConvention convention, //mspa
                                                              DependencyProperty bindableProperty)
         {
             if (bindableProperty == null || HasBinding(element, bindableProperty))
@@ -506,7 +529,7 @@
         /// <param name="bindableProperty"> </param>
         /// <returns></returns>
         public static bool SetBindingWithoutBindingOrValueOverwrite(Type viewModelType, string path,
-                                                                    PropertyInfo property, FrameworkElement element,
+                                                                    PropertyInfo property, DependencyObject element, //mspa
                                                                     ElementConvention convention,
                                                                     DependencyProperty bindableProperty)
         {
@@ -570,7 +593,8 @@
         /// <summary>
         /// Configures the selected item convention.
         /// </summary>
-        public static Action<FrameworkElement, DependencyProperty, Type, string> ConfigureSelectedItem =
+         //mspa: Using NamedDependencyObject instead of FrameworkElement //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Action<DependencyObject, DependencyProperty, Type, string> ConfigureSelectedItem =
             (selector, selectedItemProperty, viewModelType, path) =>
             {
                 if (HasBinding(selector, selectedItemProperty))
@@ -600,11 +624,11 @@
 #else
                             BindingOperations.SetBinding(selector, selectedItemProperty, binding);
 #endif
-                            Log.Info("SelectedItem binding applied to {0}.", selector.Name);
+                            Log.Info("SelectedItem binding applied to {0}.", selector);
                             return;
                         }
 
-                        Log.Info("SelectedItem binding not applied to {0} due to 'ConfigureSelectedItemBinding' customization.", selector.Name);
+                        Log.Info("SelectedItem binding not applied to {0} due to 'ConfigureSelectedItemBinding' customization.", selector);
                     }
                 }
             };
@@ -612,7 +636,8 @@
         /// <summary>
         /// Configures the SelectedItem binding for matched selection path.
         /// </summary>
-        public static Func<FrameworkElement, DependencyProperty, Type, string, Binding, bool> ConfigureSelectedItemBinding =
+         //mspa: Using NamedDependencyObject instead of FrameworkElement
+        public static Func<DependencyObject, DependencyProperty, Type, string, Binding, bool> ConfigureSelectedItemBinding =
             (selector, selectedItemProperty, viewModelType, selectionPath, binding) =>
             {
                 return true;
