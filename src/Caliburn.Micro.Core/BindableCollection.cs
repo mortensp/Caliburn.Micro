@@ -24,7 +24,10 @@ namespace Caliburn.Micro
     public class BindableCollection<T> : ObservableCollection<T>, IObservableCollection<T>
     {
         private void BindableCollection_PropertyChanged(object sender, PropertyChangedEventArgs e) => throw new NotImplementedException();
-           public bool IsAllNotificationTurnedOff => PropertyChangedBase.IsAllNotificationTurnedOff;
+        /// <summary>
+        /// Gets a value indicating whether all property change notifications are turned off globally.
+        /// </summary>
+        public bool IsAllNotificationTurnedOff => PropertyChangedBase.IsAllNotificationTurnedOff;
 
         /// <summary>
         /// Initializes a new instance of the <see cref = "BindableCollection&lt;T&gt;" /> class.
@@ -50,13 +53,26 @@ namespace Caliburn.Micro
         [NotMapped]
         [JsonIgnore]
         public bool IsNotifying { get; set; }
-
+        /// <summary>
+        /// Disables notifications and returns the previous notification state.
+        /// </summary>
+        /// <remarks>If notifications are already disabled, calling this method has no effect other than
+        /// returning the current state. This method can be used to atomically check and change the notification
+        /// status.</remarks>
+        /// <returns>true if notifications were enabled before the call; otherwise, false.</returns>
         public bool TurnOffNotification()
         {
             var status = IsNotifying;
             IsNotifying = false;
             return status;
         }
+        /// <summary>
+        /// Enables notifications and returns the previous notification state.
+        /// </summary>
+        /// <remarks>If notifications are already enabled, this method has no effect on the notification
+        /// state. Use this method to ensure notifications are active and to determine whether they were previously
+        /// enabled.</remarks>
+        /// <returns>true if notifications were already enabled; otherwise, false.</returns>
 
         public bool TurnOnNotification()
         {
