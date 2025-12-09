@@ -1,12 +1,25 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 
 namespace Caliburn.Micro
 {
 //MPSA: Tracer
+/// <summary>
+/// Provides tracing functionality for property change notifications within the application. Enables or disables
+/// detailed trace output for property changes when debugging or diagnosing application behavior.
+/// </summary>
+/// <remarks>The tracing features in this class are intended for diagnostic and debugging purposes. When <see
+/// cref="Active"/> is set to <see langword="true"/>, property change events can be traced, including information about
+/// the call stack and registered listeners. Tracing is only performed when the appropriate conditional compilation
+/// symbols are defined. This class is not intended for use in production environments and should be enabled only when
+/// detailed property change diagnostics are required.</remarks>
     public static class Tracer
     {
+        /// <summary>
+        /// Gets or sets a value indicating whether the tracing feature is currently active.
+        /// </summary>
         public static bool Active { get; set; } = false;
 
         [Conditional("TracePropertyChangeOn")]
@@ -34,7 +47,7 @@ namespace Caliburn.Micro
 
             foreach (StackFrame stackFrame in stackFrames)
             {
-                var met      = stackFrame.GetMethod();
+                MethodBase met      = stackFrame.GetMethod();
                 var fullName = met.DeclaringType?.FullName ?? met.Name;
 
                 if (fullName.StartsWith("System")
@@ -84,9 +97,9 @@ namespace Caliburn.Micro
             {
                 var first = true;
 
-                foreach (var x in list)
+                foreach (Delegate x in list)
                 {
-                    var method = x.Method;
+                    MethodInfo method = x.Method;
                     var parent = method.ReflectedType.Name;
 
                     if (parent.StartsWith("ObservableCollectionExt")

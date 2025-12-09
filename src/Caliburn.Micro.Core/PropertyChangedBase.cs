@@ -166,32 +166,60 @@ namespace Caliburn.Micro
             }
         }
 
-      
+      /// <summary>
+      /// Retrieves the list of delegates currently subscribed to the PropertyChanged event.
+      /// </summary>
+      /// <remarks>The returned array reflects the current state of the event's subscription. Modifying the
+      /// array does not affect the event's invocation list.</remarks>
+      /// <returns>An array of Delegate objects representing the invocation list of the PropertyChanged event. Returns an empty
+      /// array if no handlers are attached.</returns>
         public Delegate[] GetInvocationList() => PropertyChanged?.GetInvocationList();
 
+        /// <summary>
+        /// Gets or sets a value indicating whether all notifications are turned off for the application.
+        /// </summary>
+        /// <remarks>This property is static and applies globally across all instances. Changes to this
+        /// value affect notification behavior for all users and sessions.</remarks>
         [NotMapped]
         [JsonIgnore]
         public static  bool IsAllNotificationTurnedOff { get; set; } = false;
-
+        /// <summary>
+        /// Turns off all notifications for the application and returns the previous notification state.
+        /// </summary>
+        /// <remarks>This method sets the global notification state to off. Subsequent calls will continue
+        /// to return the previous state before the change. This method is not thread-safe; concurrent calls may result
+        /// in unexpected behavior.</remarks>
+        /// <returns>true if all notifications were already turned off before this call; otherwise, false.</returns>
         public static bool TurnOffAllNortification()
         {
             var status                 = IsAllNotificationTurnedOff;
             IsAllNotificationTurnedOff = true;
             return status;
         }
-
+        /// <summary>
+        /// Restores the global notification setting to its previous state.
+        /// </summary>
+        /// <param name="oldStatus">The previous notification status to restore. Specify <see langword="true"/> to enable all notifications;
+        /// otherwise, <see langword="false"/> to disable them.</param>
         public static void RestoreAllNotification(bool oldStatus)
         {
             IsAllNotificationTurnedOff = oldStatus;
         }
-
+        /// <summary>
+        /// Disables notifications and returns the previous notification state.
+        /// </summary>
+        /// <returns>true if notifications were enabled before the method was called; otherwise, false.</returns>
         public bool TurnOffNortification()
         {
             var status  = IsNotifying;
             IsNotifying = false;
             return status;
         }
-
+        /// <summary>
+        /// Restores the notification status to a previous value.
+        /// </summary>
+        /// <param name="oldStatus">The notification status to restore. Specify <see langword="true"/> to enable notifications; otherwise, <see
+        /// langword="false"/>.</param>
         public void RestoreNotification(bool oldStatus)
         {
             IsNotifying = oldStatus;

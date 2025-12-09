@@ -85,6 +85,14 @@ namespace Caliburn.Micro
 #endif
         }
 #if !XFORMS
+        /// <summary>
+        /// Retrieves the parent DataGrid that owns the specified DataGridColumn instance.
+        /// </summary>
+        /// <remarks>This method uses reflection to access the internal DataGridOwner property of the
+        /// DataGridColumn. If the column is not part of a DataGrid, the method returns null.</remarks>
+        /// <param name="col">The DataGridColumn for which to obtain the owning DataGrid. Cannot be null.</param>
+        /// <returns>The DataGrid instance that owns the specified column, or null if the column is not associated with a
+        /// DataGrid.</returns>
         public static DataGrid GetDataGridOwner(this DataGridColumn col)
         {
             return (DataGrid)col.GetType()
@@ -92,6 +100,13 @@ namespace Caliburn.Micro
                                 .GetValue(col, null);
     }
 #endif
+        /// <summary>
+        /// Returns the type of elements contained in the specified non-generic collection.
+        /// </summary>
+        /// <remarks>This method uses LINQ's AsQueryable to infer the element type from the collection. If
+        /// the collection is empty or its type cannot be determined, the method returns null.</remarks>
+        /// <param name="col">The non-generic collection for which to determine the element type. Can be null.</param>
+        /// <returns>The element type of the collection if it can be determined; otherwise, null.</returns>
         public static Type GetElementType(this IEnumerable col)
         {
             return col?.AsQueryable().ElementType;
@@ -104,8 +119,7 @@ namespace Caliburn.Micro
         /// <returns>The element type of the collection or null if the type was not a collection</returns>
         public static Type GetCollectionElementType(this Type type)
         {
-            if (null == type)
-                throw new ArgumentNullException("type");
+            ArgumentNullException.ThrowIfNull(type);
 
             // first try the generic way
             // this is easy, just query the IEnumerable<T> interface for its generic parameter
