@@ -375,8 +375,8 @@
         /// <summary>
         /// Invokes the action.
         /// </summary>
-        /// <param name="eventArgs">The parameter to the action. If the action does not require a parameter, the parameter may be set to a null reference.</param>
-        protected override void Invoke(object eventArgs)
+        /// <param name="parameter">The parameter to the action. If the action does not require a parameter, the parameter may be set to a null reference.</param>
+        protected override void Invoke(object parameter)
         {
             Log.Info("Invoking {0}.", this);
 
@@ -414,7 +414,7 @@
                 throw ex;
             }
 
-            _context.EventArgs = eventArgs;
+            _context.EventArgs = parameter;
 
             if (EnforceGuardsDuringInvocation && _context.CanExecute != null && !_context.CanExecute())
             {
