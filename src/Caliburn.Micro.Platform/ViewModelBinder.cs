@@ -35,7 +35,6 @@ namespace Caliburn.Micro
     using Microsoft.Xaml.Interactivity;
 #else
     using System.Windows;
-    using Microsoft.Xaml.Behaviors;
     using System.Windows.Controls;
     using System.Windows.Data;
 #endif

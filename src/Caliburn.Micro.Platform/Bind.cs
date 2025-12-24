@@ -6,7 +6,6 @@ namespace Caliburn.Micro.Maui
 namespace Caliburn.Micro
 #endif
 {
-    using System;
 #if WINDOWS_UWP
     using Windows.UI.Xaml;
     using Windows.UI.Xaml.Data;

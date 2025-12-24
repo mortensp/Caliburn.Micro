@@ -6,8 +6,6 @@ namespace Caliburn.Micro.Maui
 namespace Caliburn.Micro
 #endif
 {
-    using System;
-    using System.Collections.Generic;
     using System.Linq;
 #if WINDOWS_UWP
     using Windows.UI.Xaml;

@@ -51,14 +51,12 @@ namespace Caliburn.Micro
     using DependencyObject = global::Microsoft.Maui.Controls.BindableObject;
     using FrameworkElement = global::Microsoft.Maui.Controls.VisualElement;
 #else
-    using System.Reflection;
     using System.Text.RegularExpressions;
     using System.Windows;
     using System.Windows.Data;
     using EventTrigger = Microsoft.Xaml.Behaviors.EventTrigger;
     using TriggerBase = Microsoft.Xaml.Behaviors.TriggerBase;
     using TriggerAction = Microsoft.Xaml.Behaviors.TriggerAction;
-    using System.Text;
 #endif
 
     /// <summary>
